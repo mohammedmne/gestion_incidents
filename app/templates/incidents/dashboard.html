@@ -1,0 +1,103 @@
+﻿{% extends 'base.html' %}
+{% block content %}
+
+<!-- STATISTIQUES -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <h2 class="fw-bold">{{ stats.total }}</h2>
+                <p class="text-muted mb-0"><i class="bi bi-list-ul"></i> Total incidents</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm border-danger">
+            <div class="card-body">
+                <h2 class="fw-bold text-danger">{{ stats.critique }}</h2>
+                <p class="text-muted mb-0"><i class="bi bi-exclamation-triangle"></i> Critiques</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm border-warning">
+            <div class="card-body">
+                <h2 class="fw-bold text-warning">{{ stats.en_cours }}</h2>
+                <p class="text-muted mb-0"><i class="bi bi-arrow-repeat"></i> En cours</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm border-success">
+            <div class="card-body">
+                <h2 class="fw-bold text-success">{{ stats.clotures }}</h2>
+                <p class="text-muted mb-0"><i class="bi bi-check-circle"></i> Clôturés</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LISTE DES INCIDENTS -->
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-shield-exclamation"></i> Incidents</h5>
+        <a href="{{ url_for('incidents.nouveau') }}" class="btn btn-sm btn-dark">
+            <i class="bi bi-plus-circle"></i> Déclarer un incident
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Titre</th>
+                    <th>Catégorie</th>
+                    <th>Grâvité</th>
+                    <th>Statut</th>
+                    <th>Déclaré le</th>
+                    <th>Analyste</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inc in incidents %}
+                <tr class="gravite-{{ inc.gravite }}">
+                    <td>{{ inc.id }}</td>
+                    <td>{{ inc.titre }}</td>
+                    <td>{{ inc.categorie }}</td>
+                    <td>
+                        {% if inc.gravite == 'critique' %}
+                            <span class="badge bg-danger">{{ inc.gravite }}</span>
+                        {% elif inc.gravite == 'élevé' %}
+                            <span class="badge bg-warning text-dark">{{ inc.gravite }}</span>
+                        {% elif inc.gravite == 'moyen' %}
+                            <span class="badge bg-info text-dark">{{ inc.gravite }}</span>
+                        {% else %}
+                            <span class="badge bg-success">{{ inc.gravite }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ inc.statut }}">{{ inc.statut }}</span>
+                    </td>
+                    <td>{{ inc.date_creation.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ inc.analyste.nom if inc.analyste else '—' }}</td>
+                    <td>
+                        <a href="{{ url_for('incidents.detail', id=inc.id) }}"
+                           class="btn btn-sm btn-outline-dark">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        Aucun incident enregistré.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

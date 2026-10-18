@@ -1,0 +1,195 @@
+﻿{% extends 'base.html' %}
+{% block content %}
+
+<div class="row">
+
+    <!-- COLONNE GAUCHE : infos + actions -->
+    <div class="col-md-8">
+
+        <!-- ENTETE INCIDENT -->
+        <div class="card shadow-sm mb-4 gravite-{{ incident.gravite }}">
+            <div class="card-header bg-dark text-white d-flex justify-content-between">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-exclamation"></i>
+                    #{{ incident.id }} — {{ incident.titre }}
+                </h5>
+                <span class="badge bg-secondary">{{ incident.statut }}</span>
+            </div>
+            <div class="card-body">
+                <p>{{ incident.description }}</p>
+                <div class="row text-muted small">
+                    <div class="col-md-4">
+                        <i class="bi bi-tag"></i> <strong>Catégorie :</strong>
+                        {{ incident.categorie }}
+                    </div>
+                    <div class="col-md-4">
+                        <i class="bi bi-exclamation-triangle"></i> <strong>Gravité :</strong>
+                        {{ incident.gravite }}
+                    </div>
+                    <div class="col-md-4">
+                        <i class="bi bi-person"></i> <strong>Déclarant :</strong>
+                        {{ incident.declarant.nom }}
+                    </div>
+                    <div class="col-md-4 mt-2">
+                        <i class="bi bi-calendar"></i> <strong>Déclaré le :</strong>
+                        {{ incident.date_creation.strftime('%d/%m/%Y %H:%M') }}
+                    </div>
+                    <div class="col-md-4 mt-2">
+                        <i class="bi bi-person-check"></i> <strong>Analyste :</strong>
+                        {{ incident.analyste.nom if incident.analyste else '—' }}
+                    </div>
+                    {% if incident.date_cloture %}
+                    <div class="col-md-4 mt-2">
+                        <i class="bi bi-check-circle"></i> <strong>Clôturé le :</strong>
+                        {{ incident.date_cloture.strftime('%d/%m/%Y %H:%M') }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% if incident.synthese_cloture %}
+                <div class="alert alert-success mt-3">
+                    <strong>Synthèse de clôture :</strong> {{ incident.synthese_cloture }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- JOURNAL DES ACTIONS -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <h6 class="mb-0"><i class="bi bi-journal-text"></i> Journal des actions</h6>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for action in incident.actions %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>
+                                <i class="bi bi-person-circle text-muted"></i>
+                                <strong>{{ action.auteur.nom }}</strong>
+                                — {{ action.description }}
+                            </span>
+                            <small class="text-muted">
+                                {{ action.date.strftime('%d/%m/%Y %H:%M') }}
+                            </small>
+                        </div>
+                        {% if action.ancien_statut != action.nouveau_statut %}
+                        <small class="text-muted">
+                            <i class="bi bi-arrow-right"></i>
+                            {{ action.ancien_statut }} → {{ action.nouveau_statut }}
+                        </small>
+                        {% endif %}
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted text-center py-3">
+                        Aucune action enregistrée.
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- AJOUTER UNE ACTION -->
+        {% if incident.statut != 'clôturé' %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-pencil"></i> Ajouter une action au journal</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('incidents.ajouter_action', id=incident.id) }}">
+                    <div class="input-group">
+                        <input type="text" name="description" class="form-control"
+                               placeholder="Décrivez l'action effectuée..." required>
+                        <button type="submit" class="btn btn-dark">
+                            <i class="bi bi-plus"></i> Ajouter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- COLONNE DROITE : workflow -->
+    <div class="col-md-4">
+
+        <!-- CHANGER STATUT -->
+        {% if current_user.role in ['analyste', 'responsable', 'admin'] and incident.statut != 'clôturé' %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <h6 class="mb-0"><i class="bi bi-arrow-repeat"></i> Changer le statut</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('incidents.changer_statut', id=incident.id) }}">
+                    <div class="mb-3">
+                        <label class="form-label">Nouveau statut</label>
+                        <select name="nouveau_statut" class="form-select" required>
+                            <option value="">-- Choisir --</option>
+                            <option value="qualifié">Qualifié</option>
+                            <option value="en_cours">En cours</option>
+                            <option value="résolu">Résolu</option>
+                            <option value="clôturé">Clôturé</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Note (optionnel)</label>
+                        <input type="text" name="note" class="form-control"
+                               placeholder="Ex: Analysé, malware confirmé">
+                    </div>
+                    <div id="synthese-block" style="display:none;" class="mb-3">
+                        <label class="form-label">Synthèse de clôture</label>
+                        <textarea name="synthese" class="form-control" rows="3"
+                                  placeholder="Résumez la résolution de l'incident..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100">
+                        <i class="bi bi-check2"></i> Valider
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- AFFECTER ANALYSTE -->
+        {% if current_user.role in ['responsable', 'admin'] and incident.statut != 'clôturé' %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <h6 class="mb-0"><i class="bi bi-person-plus"></i> Affecter un analyste</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('incidents.affecter', id=incident.id) }}">
+                    <div class="mb-3">
+                        <select name="analyste_id" class="form-select" required>
+                            <option value="">-- Choisir --</option>
+                            {% for a in analystes %}
+                            <option value="{{ a.id }}"
+                                {% if incident.analyste_id == a.id %}selected{% endif %}>
+                                {{ a.nom }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100">
+                        <i class="bi bi-check2"></i> Affecter
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- RETOUR -->
+        <a href="{{ url_for('incidents.dashboard') }}" class="btn btn-outline-secondary w-100">
+            <i class="bi bi-arrow-left"></i> Retour au dashboard
+        </a>
+
+    </div>
+</div>
+
+<!-- Script pour afficher synthèse si clôturé -->
+<script>
+    document.querySelector('select[name="nouveau_statut"]')?.addEventListener('change', function() {
+        const block = document.getElementById('synthese-block');
+        block.style.display = this.value === 'clôturé' ? 'block' : 'none';
+    });
+</script>
+
+{% endblock %}

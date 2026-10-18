@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Incidents</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #1a1a2e !important; }
+        .navbar-brand, .nav-link { color: #fff !important; }
+        .badge-declaré    { background-color: #6c757d; }
+        .badge-qualifié   { background-color: #0d6efd; }
+        .badge-en_cours   { background-color: #fd7e14; }
+        .badge-résolu     { background-color: #198754; }
+        .badge-clôturé    { background-color: #212529; }
+        .gravite-critique { border-left: 4px solid #dc3545; }
+        .gravite-élevé    { border-left: 4px solid #fd7e14; }
+        .gravite-moyen    { border-left: 4px solid #ffc107; }
+        .gravite-faible   { border-left: 4px solid #198754; }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{{ url_for('incidents.dashboard') }}">
+            <i class="bi bi-shield-exclamation"></i> CyberIncidents
+        </a>
+        {% if current_user.is_authenticated %}
+        <div class="d-flex align-items-center gap-3">
+            <span class="text-white-50">
+                <i class="bi bi-person-circle"></i>
+                {{ current_user.nom }}
+                <span class="badge bg-secondary ms-1">{{ current_user.role }}</span>
+            </span>
+            {% if current_user.role in ['declarant', 'analyste', 'responsable'] %}
+            <a href="{{ url_for('incidents.nouveau') }}" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-plus-circle"></i> Déclarer
+            </a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-danger">
+                <i class="bi bi-box-arrow-right"></i> Déconnexion
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</nav>
+
+<!-- MESSAGES FLASH -->
+<div class="container mt-3">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endwith %}
+</div>
+
+<!-- CONTENU -->
+<div class="container mt-4">
+    {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
