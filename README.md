@@ -167,7 +167,6 @@ X-XSS-Protection: 1; mode=block
 | Name | Role |
 |------|------|
 | Mohammed MOUMINE | Developer & Security Analyst |
-| Yasmine BOUMNADE | Developer & Security Analyst |
 
 **Supervisor:** EMSI Master Cybersecurity  
 **Year:** 2025-2026
